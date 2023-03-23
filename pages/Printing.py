@@ -9,7 +9,9 @@ with st.form(key="print_form", clear_on_submit=True):
     submit = st.form_submit_button(label="Print", help="Sends the IDs above to the printer", type="primary")
 
     if submit:
-        print_src.app_print_driver(app_input=printing_input)
+        with st.spinner("Printing...", ):
+            print_src.app_print_driver(app_input=printing_input)
+        st.success("Job done.")
 
 with st.expander("Instructions", expanded=False):
     st.markdown("""Enter an ID or range of IDs in the text box below.
@@ -30,4 +32,3 @@ Then press the Print button, and your labels will be magically printed.
 | CB100001-CB100003        | 1x CB100001, 1xCB100002, 1xCB100003 labels (range)           |
 | CB100001*5 or CB100001x5 | 5x CB100001. Multiplication can be performed on a range too. |
 """)
-
