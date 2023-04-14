@@ -1,7 +1,7 @@
 import streamlit as st
 from PIL import Image
 
-logo = Image.open("CoreLogo.png")
+logo = Image.open("/home/runner/Extracellular/extra_app/CoreLogo.png")
 
 st.image(logo, use_column_width="always")
 
