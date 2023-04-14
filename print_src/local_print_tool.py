@@ -184,7 +184,8 @@ def table_lookup(id_list: list) -> str:
         "I": "57a88abe-ef33-4544-9d02-d1e08232c3fb",
         "V": "aa84eabd-5c5d-42d7-bf59-80fffc7fec8e",
         "C": "fad34b0e-9d3f-48f2-9e4e-0f42e5b12ada",
-        "E": "70044410-ab38-4123-93d3-7731777db882"
+        "E": "70044410-ab38-4123-93d3-7731777db882",
+        "M": "ec0f4673-e504-4ea0-b58e-751ef8e3b726"
     }
     # Get the uppercase id character to pass into the dict.
     id_slice = id_list[0][0].upper()
@@ -262,7 +263,9 @@ def trim_table_data(dataframe: pd.DataFrame, id_list: list) -> pd.DataFrame:
         "I": "Item ID",
         "V": "Vessel ID",
         "C": "Cell Bank ID",
-        "E": "Equipment ID"
+        "E": "Equipment ID",
+        "M": "Media ID"
+
     }
 
     # Set the index based on the id label dict.
@@ -787,6 +790,59 @@ def small_vessel_label_gen(active_label: tempfile.NamedTemporaryFile, item_dict:
 
     return active_label
 
+def media_label_gen(active_label: tempfile.NamedTemporaryFile, item_dict: dict) -> tempfile.NamedTemporaryFile:
+    """Generates and returns a .zpl text file based on the given item_dict, to be sent to a label printer to be printed."""
+
+    comp_list = item_dict["Media Composition"]
+    # We need to turn comp list from a string that looks like a list into an actual list
+    fix_comp_list = re.sub('\[|\]|"', "", comp_list).split(",")
+
+    formulation_name = item_dict["Formulation Name"]
+    expiry_date = reformat_opvia_date(item_dict["Expiry Date"])
+    project_id = item_dict["Project ID"]
+    media_id = item_dict["Media ID"]
+    format_comp_list = get_media_composition(fix_comp_list)
+    # pad with empty lines
+    while len(format_comp_list) < 9:
+        format_comp_list.append("")
+
+    # Logo is included here as line 2. no dotted box.
+    active_label.write(f"""
+^XA~TA000~JSN^LT0^MNW^MTT^PON^PMN^LH0,0^JMA^PR4,4~SD20^JUS^LRN^CI0^XZ
+^XA
+^MMT
+^PW305
+^LL0508
+^LS0
+^FO256,0^GFA,00512,00512,00008,:Z64:
+eJzN0LENgCAQBVAIBSUb6Bp2rOQAJspmjsIIV1IQUO4+FlqZWHgFr4H/cyj19UxwgQXW7tZOHde9achHNo3EZpfYYjPfq0YCapCAdZcAj4ARAQ4B9hnAbjU0zfksoXd+2avQq9DLOhpYS7K5Idlcx2vzu/1n/jAH2fNCzA==:22E6
+^FT270,50^A@R,23,22,TT0003M_^FH\\^CI17^F8^FDMedia^FS^CI0
+^FT272,304^A@R,23,22,TT0003M_^FH\\^CI17^F8^FDExpires:^FS^CI0
+^FT270,146^A@R,23,22,TT0003M_^FH\\^CI17^F8^FDProject:^FS^CI0
+^FT236,9^A@R,28,29,TT0003M_^FH\\^CI17^F8^FD{formulation_name}^FS^CI0
+^FT272,384^A@R,23,22,TT0003M_^FH\\^CI17^F8^FD{expiry_date}^FS^CI0
+^FT270,225^A@R,23,22,TT0003M_^FH\\^CI17^F8^FD{project_id}^FS^CI0
+^FT204,10^A@R,23,22,TT0003M_^FH\\^CI17^F8^FD{format_comp_list[0]}^FS^CI0
+^FT182,10^A@R,23,22,TT0003M_^FH\\^CI17^F8^FD{format_comp_list[1]}^FS^CI0
+^FT160,10^A@R,23,22,TT0003M_^FH\\^CI17^F8^FD{format_comp_list[2]}^FS^CI0
+^FT137,10^A@R,23,22,TT0003M_^FH\\^CI17^F8^FD{format_comp_list[3]}^FS^CI0
+^FT115,10^A@R,23,22,TT0003M_^FH\\^CI17^F8^FD{format_comp_list[4]}^FS^CI0
+^FT93,10^A@R,23,22,TT0003M_^FH\\^CI17^F8^FD{format_comp_list[5]}^FS^CI0
+^FT71,10^A@R,23,22,TT0003M_^FH\\^CI17^F8^FD{format_comp_list[6]}^FS^CI0
+^FT49,10^A@R,23,22,TT0003M_^FH\\^CI17^F8^FD{format_comp_list[7]}^FS^CI0
+^FT27,10^A@R,23,22,TT0003M_^FH\\^CI17^F8^FD{format_comp_list[8]}^FS^CI0
+""".encode("utf-8"))
+
+    # Write barcode
+    active_label.write(f"""
+^BY132,132^FT15,357
+^BXR,11,200,0,0,1,~
+^FH\^FD{media_id}^FS""".encode("utf-8"))
+
+    end_label(active_label)
+
+    return active_label
+
 
 def sterile_label_gen(active_label: tempfile.NamedTemporaryFile) -> tempfile.NamedTemporaryFile:
     """
@@ -909,10 +965,55 @@ def label_size_selection(id_char: str) -> str:
         "C": "10.1.213.52",
         "S/NS": "10.1.213.52",
         "E": "10.1.213.54",
-        "V": "10.1.213.52"
+        "V": "10.1.213.52",
+        "M": "10.1.213.54"
     }
 
     return ip_dict[id_char]
+
+
+def get_media_composition(comp_list: list) -> list:
+    """
+    takes a list of compositions of a media and returns a list of strings containing the
+    component name and concentration.
+    :param comp_list:
+    :return: comp_string_list
+    """
+
+    comp_table_id = "1f1acdb8-87a7-4681-9371-225cb7d9320c"
+    comp_string_list = []
+
+    comp_df = get_table_data(comp_table_id)
+
+    # Set the index of the table to the Composition ID to allow searching.
+    comp_df.set_index("Composition ID", inplace=True, verify_integrity=False, drop=False)
+    # Select and save the records that match the ID's in the id_list.
+    trim_comp_df = pd.DataFrame()
+    # Iteratively, so that non-existent IDs can be caught and handled.
+    for each_id in comp_list:
+        try:
+            trim_comp_df = pd.concat([trim_comp_df, comp_df.loc[each_id]], axis=1)
+
+        except KeyError:
+            print(f"No item exists for ID: {each_id}")
+    # Fix wrong orientation from weird concatenation
+    trim_comp_df = trim_comp_df.transpose()
+    # Replace NaN with empty string.
+    trim_comp_df.fillna("", inplace=True)
+
+    comp_dict_list = trim_comp_df.to_dict("records")
+
+    for comp_dict in comp_dict_list:
+        if comp_dict["Percent Concentration"] == "":
+            comp_string_list.append(
+                re.sub("μ", "u", comp_dict["Concentration Comment"]) + " " + str(comp_dict["Description"])
+            )
+        else:
+            comp_string_list.append(
+                str(comp_dict["Percent Concentration"] * 100) + "% " + str(comp_dict["Description"])
+            )
+
+    return comp_string_list
 
 
 ### PRINT TOOLS ###
@@ -960,8 +1061,8 @@ def master_print(record_dict: dict, id_char: str) -> None:
         generic_label_handler(label, record_dict, id_char)
         # Print label
         # Debug: print label to stdout
-        # label.seek(0)
-        # print(label.read())
+        #label.seek(0)
+        #print(label.read())
         zebra_ftp_print(label, id_char)
 
     return None
@@ -977,7 +1078,8 @@ def generic_label_handler(label_file, record_dict: dict, id_char: str) -> TextIO
         "I": item_label_gen,
         "V": small_vessel_label_gen,
         "C": new_cellbank_label_gen,
-        "E": equipment_label_gen
+        "E": equipment_label_gen,
+        "M": media_label_gen
     }
 
     label = label_gen_dict[id_char](label_file, record_dict)

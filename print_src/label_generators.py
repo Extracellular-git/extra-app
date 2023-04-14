@@ -2,8 +2,11 @@
 import io
 import tempfile
 
-from opvia_tools import reformat_opvia_date, format_cell_number
+from opvia_tools import reformat_opvia_date, format_cell_number, get_media_composition
 
+##############################
+## Generic label components ##
+##############################
 
 def generic_small_label_component(label: tempfile.NamedTemporaryFile) -> None:
     """Writes the generic components of the label: The bounding box, the logo and the date (dd/MMM/yyyy) to the
@@ -97,6 +100,11 @@ def end_label(label: tempfile.NamedTemporaryFile) -> None:
     return None
 
 
+##################
+## Small labels ##
+##################
+
+
 def item_label_gen(
         active_label: tempfile.NamedTemporaryFile,
         item_dict: dict
@@ -152,41 +160,6 @@ def item_label_gen(
         )
     )
 
-    end_label(active_label)
-
-    return active_label
-
-
-def equipment_label_gen(
-        active_label: tempfile.NamedTemporaryFile,
-        item_dict: dict
-) -> tempfile.NamedTemporaryFile:
-    """
-    Writes an equipment label based on the item_dict passed in, to the tempfile also passed in.
-    """
-    equipment_id = item_dict["Equipment ID"]
-    equipment_name = item_dict["Name"]
-
-    # Write generic large label components
-    generic_large_label_component(active_label)
-
-    # Write ID barcode
-    active_label.write(
-        f"""
-^FT284,156^BXB,11,200,0,0,1,_,1
-^FH\\^FD{equipment_id}^FS""".encode("utf-8")
-    )
-
-    # Write Equipment name, and equipment tag by logo.
-    active_label.write(
-        f"""
-^FT35,458^A0B,23,25^FH\^CI28^FDEquipment^FS^CI27
-^FT93,492^A0B,45,48^FH\\^CI28^FD{equipment_name}^FS^CI27""".encode(
-            "utf-8"
-        )
-    )
-
-    # End label
     end_label(active_label)
 
     return active_label
@@ -359,6 +332,8 @@ def vessel_label_gen(active_label: tempfile.NamedTemporaryFile,
     end_label(active_label)
 
     return active_label
+
+
 def small_vessel_label_gen(active_label: tempfile.NamedTemporaryFile, item_dict: dict) -> tempfile.NamedTemporaryFile:
     """
     Writes the vessel label details to the passed in file and returns it.
@@ -404,6 +379,7 @@ def sterile_label_gen(active_label: tempfile.NamedTemporaryFile) -> tempfile.Nam
     end_label(active_label)
     return active_label
 
+
 def not_sterile_label_gen(active_label: tempfile.NamedTemporaryFile) -> tempfile.NamedTemporaryFile:
     """
     Creates a Not-Sterile label.
@@ -416,6 +392,93 @@ def not_sterile_label_gen(active_label: tempfile.NamedTemporaryFile) -> tempfile
 ^FT183,122^A0I,23,25^FH\^CI28^FDS/NS^FS^CI27
 ^FT218,40^A0I,81,48^FH\^CI28^FDNot Sterile^FS^CI27
 """.encode("utf-8"))
+
+    end_label(active_label)
+
+    return active_label
+
+
+##################
+## Large labels ##
+##################
+
+
+def equipment_label_gen(
+        active_label: tempfile.NamedTemporaryFile,
+        item_dict: dict
+) -> tempfile.NamedTemporaryFile:
+    """
+    Writes an equipment label based on the item_dict passed in, to the tempfile also passed in.
+    """
+    equipment_id = item_dict["Equipment ID"]
+    equipment_name = item_dict["Name"]
+
+    # Write generic large label components
+    generic_large_label_component(active_label)
+
+    # Write ID barcode
+    active_label.write(
+        f"""
+^FT284,156^BXB,11,200,0,0,1,_,1
+^FH\\^FD{equipment_id}^FS""".encode("utf-8")
+    )
+
+    # Write Equipment name, and equipment tag by logo.
+    active_label.write(
+        f"""
+^FT35,458^A0B,23,25^FH\^CI28^FDEquipment^FS^CI27
+^FT93,492^A0B,45,48^FH\\^CI28^FD{equipment_name}^FS^CI27""".encode(
+            "utf-8"
+        )
+    )
+
+    # End label
+    end_label(active_label)
+
+    return active_label
+
+
+def media_label_gen(active_label: tempfile.NamedTemporaryFile, item_dict: dict) -> tempfile.NamedTemporaryFile:
+    """Generates and returns a .zpl text file based on the given item_dict, to be sent to a label printer to be printed."""
+
+    formulation_name = item_dict["Formulation Name"]
+    expiry_date = reformat_opvia_date(item_dict["Expiry Date"])
+    project_id = item_dict["Project ID"]
+    media_id = item_dict["Media ID"]
+    comp_list = get_media_composition(item_dict["Media Composition"])
+    # pad with empty lines
+    while len(comp_list) < 8:
+        comp_list.append("")
+    # Logo is included here as line 2. no dotted box.
+    active_label.write(f"""
+^XA~TA000~JSN^LT0^MNW^MTT^PON^PMN^LH0,0^JMA^PR4,4~SD10^JUS^LRN^CI0^XZ
+^FO256,0^GFA,00512,00512,00008,:Z64:eJzN0LENgCAQBVAIBSUb6Bp2rOQAJspmjsIIV1IQUO4+FlqZWHgFr4H/cyj19UxwgQXW7tZOHde9achHNo3EZpfYYjPfq0YCapCAdZcAj4ARAQ4B9hnAbjU0zfksoXd+2avQq9DLOhpYS7K5Idlcx2vzu/1n/jAH2fNCzA==:22E6
+^MMT
+^PW305
+^LL0508
+^LS0
+^FT270,50^A@R,23,22,TT0003M_^FH\^CI17^F8^FDMedia^FS^CI0
+^FT272,304^A@R,23,22,TT0003M_^FH\^CI17^F8^FDExpires:^FS^CI0
+^FT270,146^A@R,23,22,TT0003M_^FH\^CI17^F8^FDProject:^FS^CI0
+^FT236,9^A@R,25,24,TT0003M_^FH\^CI17^F8^FD{formulation_name}^FS^CI0
+^FT272,384^A@R,23,22,TT0003M_^FH\^CI17^F8^FD{expiry_date}^FS^CI0
+^FT270,225^A@R,23,22,TT0003M_^FH\^CI17^F8^FD{project_id}^FS^CI0
+^FT204,10^A@R,23,22,TT0003M_^FH\^CI17^F8^FD{comp_list[0]}^FS^CI0
+^FT182,10^A@R,23,22,TT0003M_^FH\^CI17^F8^FD{comp_list[1]}^FS^CI0
+^FT160,10^A@R,23,22,TT0003M_^FH\^CI17^F8^FD{comp_list[2]}^FS^CI0
+^FT137,10^A@R,23,22,TT0003M_^FH\^CI17^F8^FD{comp_list[3]}^FS^CI0
+^FT115,10^A@R,23,22,TT0003M_^FH\^CI17^F8^FD{comp_list[4]}^FS^CI0
+^FT93,10^A@R,23,22,TT0003M_^FH\^CI17^F8^FD{comp_list[5]}^FS^CI0
+^FT71,10^A@R,23,22,TT0003M_^FH\^CI17^F8^FD{comp_list[6]}^FS^CI0
+^FT49,10^A@R,23,22,TT0003M_^FH\^CI17^F8^FD{comp_list[7]}^FS^CI0
+^FT27,10^A@R,23,22,TT0003M_^FH\^CI17^F8^FD{comp_list[8]}^FS^CI0
+""".encode("utf-8"))
+
+    # Write barcode
+    active_label.write(f"""
+^BY132,132^FT15,357
+^BXR,11,200,0,0,1,~
+^FH\^FD{media_id}^FS""".encode("utf-8"))
 
     end_label(active_label)
 
