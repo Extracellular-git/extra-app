@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import timeit
+import pandas as pd
+
+from local_print_tool import get_table_data, trim_table_data
 
 def reformat_opvia_date(raw_opvia_date) -> str:
     """
@@ -71,3 +73,40 @@ def format_cell_number_branchless(cell_number: int) -> str:
             + (str(round(cell_number / 1000000, 1)) + "M") * (8 >= len(str(cell_number)) >= 6)
             + (str(round(cell_number / 1000, 1)) + "K") * (5 >= len(str(cell_number)) >= 3)
     )
+
+
+def get_media_composition(comp_list: list) -> list:
+    """
+    takes a list of compositions of a media and returns a list of strings containing the
+    component name and concentration. if percent is empty, use comment.
+    :param comp_list:
+    :return: comp_string_list
+    """
+
+    comp_table_id = "1f1acdb8-87a7-4681-9371-225cb7d9320c"
+    comp_string_list = []
+
+    comp_df = get_table_data(comp_table_id)
+
+    # Set the index of the table to the Composition ID to allow searching.
+    comp_df.set_index("Composition ID", inplace=True, verify_integrity=False, drop=False)
+    # Select and save the records that match the ID's in the id_list.
+    trim_comp_df = pd.DataFrame()
+    # Iteratively, so that non-existent IDs can be caught and handled.
+    for each_id in comp_list:
+        try:
+            trim_comp_df = pd.concat([trim_comp_df, comp_df.loc[each_id]], axis=1)
+
+        except KeyError:
+            print(f"No item exists for ID: {each_id}")
+    # Fix wrong orientation from weird concatenation
+    trim_comp_df = trim_comp_df.transpose()
+    # Replace NaN with empty string.
+    trim_comp_df.fillna("", inplace=True)
+
+    comp_dict_list = trim_comp_df.to_dict("records")
+
+    for comp_dict in comp_dict_list:
+        comp_string_list.append(str(comp_dict["Percentage Concentration"]) + "% " + str(comp_dict["Description"]))
+
+    return comp_string_list
