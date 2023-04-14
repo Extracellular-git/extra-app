@@ -700,8 +700,6 @@ def new_cellbank_label_gen(active_label: tempfile.NamedTemporaryFile,
     total_cells_format = format_cell_number(total_cells)
 
     label_string = f"""
-CT~~CD,~CC^~CT~
-^XA~TA000~JSN^LT0^MNW^MTT^PON^PMN^LH0,0^JMA^PR4,4~SD15^JUS^LRN^CI0^XZ
 ^XA
 ^MMT
 ^PW229
@@ -808,8 +806,8 @@ def media_label_gen(active_label: tempfile.NamedTemporaryFile, item_dict: dict) 
 
     # Logo is included here as line 2. no dotted box.
     active_label.write(f"""
-^XA~TA000~JSN^LT0^MNW^MTT^PON^PMN^LH0,0^JMA^PR4,4~SD20^JUS^LRN^CI0^XZ
 ^XA
+^PR4,4~SD20
 ^MMT
 ^PW305
 ^LL0508
@@ -1063,7 +1061,7 @@ def master_print(record_dict: dict, id_char: str) -> None:
         # Debug: print label to stdout
         label.seek(0)
         print(label.read())
-        #zebra_ftp_print(label, id_char)
+        zebra_ftp_print(label, id_char)
 
     return None
 
