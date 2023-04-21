@@ -1,1 +1,1 @@
-from dilution_calc import conc_calc
+from .dilution_calc import conc_calc

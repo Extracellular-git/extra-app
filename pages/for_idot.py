@@ -1,9 +1,8 @@
 import base64
-import doe_to_idot as dti
 import pandas as pd
-import qPCR_to_idot as qti
 import streamlit as st
 
+from to_idot import doe_to_idot_main, qPCR_to_idot_main
 from st_aggrid import AgGrid, GridOptionsBuilder
 
 
@@ -73,7 +72,7 @@ if submit_sidebar:
     conc_dict = {}
     for i, name in enumerate(component_name_list):
         conc_dict[name] = float(concentration_list[i])
-        dti.doe_to_idot_main(source_path, final_well_volume, conc_dict, destination_path, replicates = 1, orientation ='by_columns')
+        doe_to_idot_main(source_path, final_well_volume, conc_dict, destination_path, replicates = 1, orientation ='by_columns')
     
 
 
