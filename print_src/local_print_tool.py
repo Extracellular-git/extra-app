@@ -710,7 +710,7 @@ eJzV0L0JwCAQgFHF4poQR3CTuFY6hSxmNnGElFdIzP1YhoBlrnkgfpxozA8HXWEsQmVd8yJgED1GMVxJ
 ^FO0,96^GFA,01536,01536,00024,:Z64:
 eJzt0TFuwzAMBVAFGjjyBvRFAutaGYpCgQeNvkF9FBvooLE3KFx48BgCGeJBkErJSdsM2Yqig/9EPAIERSm1Zcs/DrjO8pmJ9LIL0FmqsZlT9n7ky0KEASL0IxlofPE0cgpEVcQESbzxrvjEHGqSBrZSEzQnhdmHhWUM7bEDPywEx6vbQ3EFVnt7ILDxy/nOw52bdPOnR67TD99/z8+OeZ/VX7TsU8OxeOU+uHiNFUj9fN0zubR61aPU52imN7v6WBwjyB2maGaf/eL6oTgELXd7fTdzM4h716riO1YLtJrMSY+4/gErJe+9fYhVkH7Bc+uBb/mzfALyrK/1:C14B
 ^BY2,3,36^FT216,0^BCI,,N,N
-^FD{cell_bank_id}^FS
+^FD>:CB>5{cell_bank_id[2:8]}^FS
 ^FT226,103^A@I,17,18,TT0003M_^FH\^CI17^F8^FD{species}-{cell_morphology}^FS^CI0"""\
         .replace("\n", "")\
         .encode("utf-8")

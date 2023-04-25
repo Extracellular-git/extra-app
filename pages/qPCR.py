@@ -1,10 +1,10 @@
 import base64
-import doe_to_idot as dti
 import pandas as pd
-import qPCR_to_idot as qti
 import streamlit as st
 
-from st_aggrid import AgGrid, GridOptionsBuilder
+import to_idot
+
+#from st_aggrid import AgGrid, GridOptionsBuilder
 
 st.set_page_config(layout="wide")
 
@@ -22,7 +22,7 @@ def add_bg_from_local(image_file):
     """,
     unsafe_allow_html=True
     )
-add_bg_from_local('Screenshot 2023-03-30 155702.png')    
+add_bg_from_local('ExtracellularCorporateWallpaper.png')
 
 st.title("Welcome to the qPCR setup page")
 
@@ -45,9 +45,9 @@ target_path_plate = st.text_input("Path for CFX file")
 submit_sidebar = options_form.form_submit_button()
 if submit_sidebar:
     path = source_path
-    if with_idot_choice == True:
-        df = qti.qPCR_to_idot_main(path, target_path, dna_volume, primer_volume, final_reaction_volume/2, number_primer_tubes)
-    if CFX_choice == True:  
-        df = qti.plate_template_gen(path)
-        dti.generate_csv_file(target_path_plate, df, idot_header=False)
+    if with_idot_choice:
+        df = to_idot.qPCR_to_idot_main(path, target_path, dna_volume, primer_volume, final_reaction_volume/2, number_primer_tubes)
+    if CFX_choice:
+        df = to_idot.plate_template_gen(path)
+        to_idot.generate_csv_file(target_path_plate, df, idot_header=False)
     
