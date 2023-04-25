@@ -2,8 +2,9 @@ import base64
 import pandas as pd
 import streamlit as st
 
-from to_idot import doe_to_idot_main, qPCR_to_idot_main
-from st_aggrid import AgGrid, GridOptionsBuilder
+import to_idot
+
+#from st_aggrid import AgGrid, GridOptionsBuilder
 
 
 st.set_page_config(layout="wide")
@@ -22,7 +23,7 @@ def add_bg_from_local(image_file):
     """,
     unsafe_allow_html=True
     )
-add_bg_from_local('Screenshot 2023-03-30 155702.png')    
+add_bg_from_local('ExtracellularCorporateWallpaper.png')
 
 st.title("Welcome to the DoE to iDOT setup page")
 
@@ -72,7 +73,7 @@ if submit_sidebar:
     conc_dict = {}
     for i, name in enumerate(component_name_list):
         conc_dict[name] = float(concentration_list[i])
-        doe_to_idot_main(source_path, final_well_volume, conc_dict, destination_path, replicates = 1, orientation ='by_columns')
+        to_idot.doe_to_idot_main(source_path, final_well_volume, conc_dict, destination_path, replicates = 1, orientation ='by_columns')
     
 
 

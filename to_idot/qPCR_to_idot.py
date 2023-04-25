@@ -1,6 +1,8 @@
 import pandas as pd
 import platemapping.plate_map as pm
-import doe_to_idot as dti
+#import extra_app.to_idot.doe_to_idot as dti
+
+from doe_to_idot import calculate_target_well_info_per_df, get_source_wells, generate_csv_file
 
 
 def generate_df_from_template(path_to_template:str, volume_dna:float, primers_volume:float, final_volume_without_master_mix:float, primer_tubes_choice:int):
@@ -50,17 +52,17 @@ def generate_df_from_template(path_to_template:str, volume_dna:float, primers_vo
     #making a column for water, filling water wells with 0 by default
     df['water'] = 0
     #defining a column for wells based on the original imported table
-    df['Well'] = table['Wells'] 
-    
+    df['Well'] = table['Wells']
+
     #print(f'first_df: {df}')
     # calculating how to populate the rest of the dataframe
     if primer_tubes_choice == 1:
         for i, row in enumerate(table['Group']):
-            #calculating how much DNA volume to add to each well (row) 
+            #calculating how much DNA volume to add to each well (row)
             df[row].iloc[i] = volume_dna/table['Dilution'].iloc[i]
             #working out how much water to top up to final volume (excluding master mix)
             df['water'].iloc[i] = final_volume_without_master_mix - ((volume_dna/table['Dilution'].iloc[i]) + primers_volume)
-        #filling the primer column 
+        #filling the primer column
         for i, row in enumerate(table['Target']):
             #print(f'row: {row}')
             df[row].iloc[i] = primers_volume
@@ -79,7 +81,7 @@ def generate_df_from_template(path_to_template:str, volume_dna:float, primers_vo
 
     # generating an empty plate map
     map = pm.empty_map()
-    #creating a list of cols 
+    #creating a list of cols
     cols=[i for i in df.columns if i not in ["Well"]]
     #print(f'cols:{cols}')
     for col in cols:
@@ -103,10 +105,10 @@ def qPCR_to_idot_main(path_to_template_file, path_to_output_file, volume_dna, pr
 
     df, map = generate_df_from_template(path_to_template_file, volume_dna, primers_volume, final_volume_without_master_mix, primer_tubes_choice)
     #print(df)
-    sum_dictionary_list, starting_wells_dictionary_list = dti.calculate_target_well_info_per_df(df, 1)
+    sum_dictionary_list, starting_wells_dictionary_list = calculate_target_well_info_per_df(df, 1)
     #print(f'sum_dictionary_list: {sum_dictionary_list}, starting_wells_dictionary_list:{starting_wells_dictionary_list}')
-    df = dti.get_source_wells(df, sum_dictionary_list, starting_wells_dictionary_list, map)
-    dti.generate_csv_file(path_to_output_file, df, idot_header=True, dispense_plate='qpcr plate')
+    df = get_source_wells(df, sum_dictionary_list, starting_wells_dictionary_list, map)
+    generate_csv_file(path_to_output_file, df, idot_header=True, dispense_plate='qpcr plate')
 
 def plate_template_gen(path_to_template_file):
     """
@@ -136,21 +138,21 @@ def plate_template_gen(path_to_template_file):
 
 if __name__ == '__main__':
     # template_file = input('Please provide the path to the template ')
-    # idot_choice = input('Are you plating the assay with the idot? (y/n) ') 
+    # idot_choice = input('Are you plating the assay with the idot? (y/n) ')
     # if idot_choice == 'y':
     #     idot_output_file = input('Please provide a path for the idot output file (as a .csv file) ')
     #     dna_volume = float(input('What volume of DNA mixture per well as a number in ul (e.g. "1") '))
     #     primer_number_choice = int(input('How many tubes of primers do you have with this assay? (i.e. "1" or "2" )'))
-    #     primer_volume = float(input('What volume of each primer per well as a number in ul (e.g. "1") '))       
+    #     primer_volume = float(input('What volume of each primer per well as a number in ul (e.g. "1") '))
     #     reaction_volume = float(input('Please provide the final reaction volume per well as a number in ul (e.g. "10") '))
     #     df = qPCR_to_idot_main(template_file, idot_output_file, dna_volume, primer_volume, reaction_volume/2, primer_number_choice)
     # qpcr_choice = input('Would you like to make a qPCR plate template? (y/n) ')
-    # #CHANGE THIS BACK TO VARS 
-    # if qpcr_choice == 'y':  
+    # #CHANGE THIS BACK TO VARS
+    # if qpcr_choice == 'y':
     #     qPCR_output_file = input('Please provide a path for the idot output file (as a .csv file) ')
     #     df = plate_template_gen(template_file)
     #     dti.generate_csv_file(qPCR_output_file, df, idot_header=False)
 
     #df = qPCR_to_idot_main('qPCR_assay_template_ipsc test.xlsx', '21Mar23_qpcr.csv', 2, 1, 5, 1)
     df = plate_template_gen('qPCR_assay_template_ipsc test.xlsx')
-    dti.generate_csv_file('21Mar23_qpcr_template.csv', df, idot_header=False)
+    generate_csv_file('21Mar23_qpcr_template.csv', df, idot_header=False)
