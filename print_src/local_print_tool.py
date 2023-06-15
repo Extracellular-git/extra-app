@@ -681,14 +681,25 @@ def new_cellbank_label_gen(active_label: tempfile.NamedTemporaryFile,
     :param item_dict: dict containing record attributes
     :return: the active_label tempfile.
     """
-    cell_bank_id = item_dict["Cell Bank ID"]
-    name = item_dict["Cell Type"]
-    species = item_dict["Species"]
-    cell_morphology = item_dict["Cell Morphology"]
-    catalog_number = item_dict["Catalog Number"]
-    total_cells = item_dict["Total Cells"]
-    volume = item_dict["Volume (mL)"]
-    conc = item_dict["Concentration (cells/ml)"]
+    # Check if cell bank v2 and get correct fields if so.
+    if item_dict["ISO Isolation ID"] != "":
+        cell_bank_id = item_dict["Cell Bank ID"]
+        name = item_dict["ISO Cell Type Name"]
+        species = item_dict["ISO Cell Type Species"]
+        cell_morphology = item_dict["ISO Cell Type Morphology"]
+        catalog_number = item_dict["ISO Isolation ID"]
+        total_cells = item_dict["ISO Total Cells"]
+        volume = item_dict["ISO Volume (ml)"]
+        conc = item_dict["ISO Cell Concentration (cells/ml)"]
+    else:
+        cell_bank_id = item_dict["Cell Bank ID"]
+        name = item_dict["Cell Type"]
+        species = item_dict["Species"]
+        cell_morphology = item_dict["Cell Morphology"]
+        catalog_number = item_dict["Lot Number"]
+        total_cells = item_dict["Total Cells"]
+        volume = item_dict["Volume (mL)"]
+        conc = item_dict["Concentration (cells/ml)"]
 
     # Fix empty numbers
     if total_cells == "":
@@ -726,7 +737,7 @@ eJzt0TFuwzAMBVAFGjjyBvRFAutaGYpCgQeNvkF9FBvooLE3KFx48BgCGeJBkErJSdsM2Yqig/9EPAIE
             .replace("\n", "")\
             .encode("utf-8")
 
-    label_string += f"""^FT224,62^A@I,17,18,TT0003M_^FH\^CI17^F8^FDCat:^FS^CI0
+    label_string += f"""^FT224,62^A@I,17,18,TT0003M_^FH\^CI17^F8^FDLot:^FS^CI0
 ^FT191,62^A@I,17,18,TT0003M_^FH\^CI17^F8^FD{catalog_number}^FS^CI0
 ^FT169,39^A@I,17,18,TT0003M_^FH\^CI17^F8^FD{cell_bank_id}^FS^CI0
 ^PQ1,0,1,Y^XZ
