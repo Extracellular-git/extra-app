@@ -424,6 +424,19 @@ if __name__ == '__main__':
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+                    prog='DOE to iDOT',
+                    description='translates simple DOE matrices in CSV or XLSX format into a CSV format that the iDOT by Dispendix can read',
+                    epilog='Authored by Mark Owen, modified and maintained by Alex')
+    parser.add_argument("input",
+                        description="The input filename",
+                        action="store",
+                        help="Enter the name of the csv or xlsx file holding the DOE design",
+                        required=True,
+                        dest="in_file"
+                        )
+    parser.add_argument("out"
+                        )
     # Note: the units for the starting concentrations and the target concentrations (from the DoE) must be the same
     starting_conc_dict = {'ITS (X)':100, 'DEX (uM)': 2.55, 'LASC (mM)':283.89, 'TGF-B1 (ng/mL)':100, 'FGF-2 (ng/mL)':2000,'PDGF-b (ng/mL)': 1000, 'LA (X)': 100}
     doe_to_idot_main('21Mar23_doe_conditions_one_plate.csv', 200, starting_conc_dict, '21Mar23_for_idot_by_rows.csv', replicates = 1, orientation ='by_rows')
