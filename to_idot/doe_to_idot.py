@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import csv
+import io
 import datetime
 import math
 import numpy as np
@@ -8,10 +9,10 @@ import pandas as pd
 import platemapping.plate_map as pm
 
 
-def generate_target_vols(csv_path, final_volume, starting_conc_dict, replicates=1, orientation='by_columns'):
+def generate_target_vols(in_df, final_volume, starting_conc_dict, replicates=1, orientation='by_columns'):
     """
     creates a target plate dataframe, containing the volumes to be added to each well (row). 
-    :param csv_path: doe template file (see SOP for more info)
+    :param csv: doe template file (see SOP for more info)
     :param final_volume: volume of each well
     :param starting_conc_dict: dictionary detailing every reagents starting (stock) dilution
     :param replicates: Number of replicates per well/condition
@@ -19,7 +20,7 @@ def generate_target_vols(csv_path, final_volume, starting_conc_dict, replicates=
     :return:
     """
     # read the .csv doe file
-    doe = pd.read_csv(csv_path, index_col=False)
+    doe = in_df
     # creating lists/dicts for data storage
     col_list = []
     # makes a list of column names from the doe dataframe
@@ -107,7 +108,7 @@ def calculate_target_well_info_per_df(df_list, replicates):
     sum_dictionary_list = []
     starting_wells_dictionary_list = []
     for df in df_list:
-        print(f'df: {df}')
+        #print(f'df: {df}')
         col_list = []
         temp_list = []
         column_sum_dict = {}
@@ -123,7 +124,7 @@ def calculate_target_well_info_per_df(df_list, replicates):
             #define the sum volume as an element in the dictionary
             column_sum_dict[col] = col_sum
         for i in column_sum_dict:
-            print(i, type(i))
+            #print(i, type(i))
             #calculate the number of source wells required per reagent
             if column_sum_dict[i] <=80:
                 starting_wells_count_dict[i] = 1
@@ -132,7 +133,7 @@ def calculate_target_well_info_per_df(df_list, replicates):
                 starting_wells_volume_dict[i] = round(float(column_sum_dict[i]/starting_wells_count_dict[i]),5)
         #calculates the total number of starting wells required
         total_starting_wells = np.sum(starting_wells_count_dict.values())
-        print(f'ts: {total_starting_wells}')
+        #print(f'ts: {total_starting_wells}')
         sum_dictionary_list.append(column_sum_dict)
         starting_wells_dictionary_list.append(starting_wells_count_dict)
     return sum_dictionary_list, starting_wells_dictionary_list
@@ -206,8 +207,8 @@ def get_source_wells(list_df, sum_wells_list, num_wells_list, map):
                     #adding the row to the df
                     new_df.loc[iter_count] = one_row
                     iter_count = iter_count + 1
-                    print(f'sum_wells_list[dict_index][column]: {sum_wells_list[dict_index][column]}')
-                    print(f'total_reagent_counter:{total_reagent_counter}')
+                    #print(f'sum_wells_list[dict_index][column]: {sum_wells_list[dict_index][column]}')
+                    #print(f'total_reagent_counter:{total_reagent_counter}')
                     #if the total reagent is equal to the total amount calculated, skip to the next source well and break 
                     if total_reagent_counter >= sum_wells_list[dict_index][column]:
                         source_well_index=source_well_index+1
@@ -217,21 +218,20 @@ def get_source_wells(list_df, sum_wells_list, num_wells_list, map):
                         source_well_index=source_well_index+1
                         break
                 one_column_iteration_count += 1 
-                print(one_column_iteration_count)
+                #print(one_column_iteration_count)
         new_df = new_df.reset_index(drop=True)
         df_list.append(new_df)
     return df_list
 
-def generate_csv_file(csv_path, list_df, idot_header=True, dispense_plate='MWP 96'):
+def generate_csv_file(csv_buffer, list_df, idot_header=True, dispense_plate='MWP 96'):
     """
     Creates a csv file from dataframe in a format suitable for the iDOT
-    :param csv_path: path to .csv file
+    :param csv_buffer: csv file buffer
     :param list_df: list of dataframes to append into one file
     :param idot_header: whether or not to include the header in the .csv
     :param dispense_plate: this will change whether it is for plating into the standard assay plates, or the qPCR plate
     :return:
     """
-    Path(csv_path).touch()
 
     date = datetime.date.today()
     
@@ -242,31 +242,31 @@ def generate_csv_file(csv_path, list_df, idot_header=True, dispense_plate='MWP 9
             rows =[[date, '1.9.1.5', '<User Name>', date,'','',''],
                 ['S.100 Plate',f'Source Plate {1}','', 8.00E-05, dispense_plate, plate_num,'','Waste Tube'],
                 ['DispenseToWaste=True','DispenseToWasteCycles=3','DispenseToWasteVolume=1e-7','UseDeionisation=True','OptimizationLevel=ReorderAndParallel','WasteErrorHandlingLevel=Ask','SaveLiquids=Ask','']]
-            with open(csv_path, 'a', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerows(rows)
-                #print(f'df: {df}')
-        df.to_csv(csv_path, mode='a', header=True, index=False)
+
+            writer = csv.writer(csv_buffer)
+            writer.writerows(rows)
+        print(csv_buffer.readlines())
+        df.to_csv(csv_buffer, mode='a', header=True, index=False)
         
  
-def doe_to_idot_main(doe_csv_path, final_volume, starting_conc_dict, final_csv_path, replicates=1, orientation='by_columns'):
+def doe_to_idot_main(in_doe_df: pd.DataFrame, final_volume, starting_conc_dict, final_csv_buffer: io.TextIOWrapper, replicates=1, orientation='by_columns'):
     """
     Brings all the above functions together
-    :param doe_csv_path: source template .csv file
+    :param in_doe_df pandas.DataFrame: source template dataframe (read from .csv)
     :param final_volume: the final volume in each well
     :param starting_conc_dict: dictionary of the starting concentrations for the reagents
-    :param final_csv_path: the output path for the iDOT .csv file
+    :param final_csv_buffer: the output path for the iDOT .csv file
     :param replicates: the number of replicates per well/condition
     :param orientation: by columns or by rows. Default is by columns
     :return:
     """
-    df_list_first, map = generate_target_vols(doe_csv_path, final_volume, starting_conc_dict, replicates=replicates, orientation=orientation)
+    df_list_first, plate_map = generate_target_vols(in_doe_df, final_volume, starting_conc_dict, replicates=replicates, orientation=orientation)
     #print(df_list_first)
     sum_wells_list, num_wells_list = calculate_target_well_info_per_df(df_list_first, replicates)
     print(sum_wells_list, num_wells_list)
-    final_df_list = get_source_wells(df_list_first, sum_wells_list, num_wells_list, map)
+    final_df_list = get_source_wells(df_list_first, sum_wells_list, num_wells_list, plate_map)
     #print(final_df_list)
-    generate_csv_file(final_csv_path, final_df_list)
+    generate_csv_file(final_csv_buffer, final_df_list)
     
 
 
@@ -356,11 +356,11 @@ def generate_df_from_template(path_to_template:str, volume_dna:float, primers_vo
     return df, map
 
 
-def qPCR_to_idot_main(path_to_template_file, path_to_output_file, volume_dna, primers_volume, final_volume_without_master_mix, primer_tubes_choice:int):
+def qPCR_to_idot_main(in_df, output_file_buffer, volume_dna, primers_volume, final_volume_without_master_mix, primer_tubes_choice:int):
     """
     Main file bringing together the functions from this file and the doe_to_idot file
-    :param path_to_template_file:
-    :param path_to_output_file:
+    :param in_df:
+    :param output_file_buffer:
     :param volume_dna:
     :param primers_volume:
     :param final_volume_without_master_mix:
@@ -368,12 +368,12 @@ def qPCR_to_idot_main(path_to_template_file, path_to_output_file, volume_dna, pr
     :return:
     """
 
-    df, map = generate_df_from_template(path_to_template_file, volume_dna, primers_volume, final_volume_without_master_mix, primer_tubes_choice)
+    df, map = generate_df_from_template(in_df, volume_dna, primers_volume, final_volume_without_master_mix, primer_tubes_choice)
     #print(df)
     sum_dictionary_list, starting_wells_dictionary_list = calculate_target_well_info_per_df(df, 1)
     #print(f'sum_dictionary_list: {sum_dictionary_list}, starting_wells_dictionary_list:{starting_wells_dictionary_list}')
     df = get_source_wells(df, sum_dictionary_list, starting_wells_dictionary_list, map)
-    generate_csv_file(path_to_output_file, df, idot_header=True, dispense_plate='qpcr plate')
+    generate_csv_file(output_file_buffer, df, idot_header=True, dispense_plate='qpcr plate')
 
 def plate_template_gen(path_to_template_file):
     """
@@ -440,4 +440,3 @@ if __name__ == '__main__':
     # Note: the units for the starting concentrations and the target concentrations (from the DoE) must be the same
     starting_conc_dict = {'ITS (X)':100, 'DEX (uM)': 2.55, 'LASC (mM)':283.89, 'TGF-B1 (ng/mL)':100, 'FGF-2 (ng/mL)':2000,'PDGF-b (ng/mL)': 1000, 'LA (X)': 100}
     doe_to_idot_main('21Mar23_doe_conditions_one_plate.csv', 200, starting_conc_dict, '21Mar23_for_idot_by_rows.csv', replicates = 1, orientation ='by_rows')
-
