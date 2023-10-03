@@ -13,8 +13,8 @@ RUN git clone -b live https://github.com/extracellular-git/extra-app.git .
 
 RUN pip3 install -r requirements.txt
 
-EXPOSE 8501
+EXPOSE 9501
 
-HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
+HEALTHCHECK CMD curl --fail http://localhost:9501/_stcore/health
 
 ENTRYPOINT ["streamlit", "run", "Home.py"]
