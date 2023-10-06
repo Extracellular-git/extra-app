@@ -35,16 +35,14 @@ if session.file_done:
         st.warning("No file uploaded", icon="⚠")
         st.rerun()
 
-    if '.csv' in source_file.name:
+    try:
         df = pd.read_csv(source_file)
         columns = df.columns
-    elif '.xlsx' in source_file.name:
+    except UnicodeDecodeError:
         df = pd.read_excel(source_file)
         columns = df.columns
     else:
-        st.warning("File type unknown, trying to read as CSV", icon="⚠")
-        df = pd.read_csv(source_file)
-        columns = df.columns
+        st.warning("File type unknown, use CSV or XLSX", icon="⚠")
 
 
     if columns is not None:
@@ -83,12 +81,16 @@ if (session.file_done and session.param_done):
     for i, name in enumerate(component_name_list):
         conc_dict[name] = float(concentration_list[i])
 
-    with open("new.csv", mode="w+", newline='') as finished_file:
+    stringstore = None
+
+    with tempfile.TemporaryFile(mode="w+", newline='') as finished_file:
         to_idot.doe_to_idot_main(session.in_df, final_well_volume, conc_dict, finished_file, replicates=1, orientation='by_columns')
+        finished_file.seek(0)
+        stringstore = finished_file.read()
 
     download_button = st.download_button(
         label="Download finished file",
-        data=open("new.csv", "rb"),
+        data=stringstore,
         file_name=destination_name,
         mime="text/csv"
     )
