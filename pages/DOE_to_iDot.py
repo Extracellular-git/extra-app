@@ -59,6 +59,11 @@ if session.file_done:
     destination_name = st.text_input("Name for iDOT file")
     final_well_volume = st.number_input("Final well volume", 0)
     replicates = st.number_input("Number of replicates", 1)
+    orientation_pick = st.selectbox("Orientation by rows or columns?", ["Rows", "Columns"], index=0)
+    if orientation_pick == "Rows":
+        orientation = "by_rows"
+    else:
+        orientation = "by_columns"
 
     st.write("Don't forget to check that the conc. units are the same between source file and what is here")
 
@@ -84,7 +89,7 @@ if (session.file_done and session.param_done):
     stringstore = None
 
     with tempfile.TemporaryFile(mode="w+", newline='') as finished_file:
-        to_idot.doe_to_idot_main(session.in_df, final_well_volume, conc_dict, finished_file, replicates=1, orientation='by_columns')
+        to_idot.doe_to_idot_main(session.in_df, final_well_volume, conc_dict, finished_file, replicates=replicates, orientation=orientation)
         finished_file.seek(0)
         stringstore = finished_file.read()
 
