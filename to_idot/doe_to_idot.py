@@ -79,9 +79,7 @@ def generate_target_vols(in_df, final_volume, starting_conc_dict, replicates=1, 
         by_columns_list = []
         for i in range(12):
             temp_list = list(wells[i::12])
-            #print(f'temp_list: {temp_list}')
             by_columns_list = by_columns_list + temp_list
-            ##print(f'by columns list: {by_columns_list}')
         wells = pd.Series(by_columns_list)
         #making loads of replicates of the well names to accommodate any number of plates (removes chance of index error) 
         wells_repeated = pd.concat([wells]*100, ignore_index=True)
@@ -402,41 +400,22 @@ def plate_template_gen(path_to_template_file):
 
 
 if __name__ == '__main__':
-    # template_file = input('Please provide the path to the template ')
-    # idot_choice = input('Are you plating the assay with the idot? (y/n) ')
-    # if idot_choice == 'y':
-    #     idot_output_file = input('Please provide a path for the idot output file (as a .csv file) ')
-    #     dna_volume = float(input('What volume of DNA mixture per well as a number in ul (e.g. "1") '))
-    #     primer_number_choice = int(input('How many tubes of primers do you have with this assay? (i.e. "1" or "2" )'))
-    #     primer_volume = float(input('What volume of each primer per well as a number in ul (e.g. "1") '))
-    #     reaction_volume = float(input('Please provide the final reaction volume per well as a number in ul (e.g. "10") '))
-    #     df = qPCR_to_idot_main(template_file, idot_output_file, dna_volume, primer_volume, reaction_volume/2, primer_number_choice)
-    # qpcr_choice = input('Would you like to make a qPCR plate template? (y/n) ')
-    # #CHANGE THIS BACK TO VARS
-    # if qpcr_choice == 'y':
-    #     qPCR_output_file = input('Please provide a path for the idot output file (as a .csv file) ')
-    #     df = plate_template_gen(template_file)
-    #     dti.generate_csv_file(qPCR_output_file, df, idot_header=False)
-
-    #df = qPCR_to_idot_main('qPCR_assay_template_ipsc test.xlsx', '21Mar23_qpcr.csv', 2, 1, 5, 1)
-    df = plate_template_gen('qPCR_assay_template_ipsc test.xlsx')
-    generate_csv_file('21Mar23_qpcr_template.csv', df, idot_header=False)
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-                    prog='DOE to iDOT',
-                    description='translates simple DOE matrices in CSV or XLSX format into a CSV format that the iDOT by Dispendix can read',
-                    epilog='Authored by Mark Owen, modified and maintained by Alex')
-    parser.add_argument("input",
-                        description="The input filename",
-                        action="store",
-                        help="Enter the name of the csv or xlsx file holding the DOE design",
-                        required=True,
-                        dest="in_file"
-                        )
-    parser.add_argument("out"
-                        )
+    # parser = argparse.ArgumentParser(
+    #                 prog='DOE to iDOT',
+    #                 description='translates simple DOE matrices in CSV or XLSX format into a CSV format that the iDOT by Dispendix can read',
+    #                 epilog='Authored by Mark Owen, modified and maintained by Alex')
+    # parser.add_argument("input",
+    #                     description="The input filename",
+    #                     action="store",
+    #                     help="Enter the name of the csv or xlsx file holding the DOE design",
+    #                     required=True,
+    #                     dest="in_file"
+    #                     )
+    # parser.add_argument("out"
+    #                     )
     # Note: the units for the starting concentrations and the target concentrations (from the DoE) must be the same
-    starting_conc_dict = {'ITS (X)':100, 'DEX (uM)': 2.55, 'LASC (mM)':283.89, 'TGF-B1 (ng/mL)':100, 'FGF-2 (ng/mL)':2000,'PDGF-b (ng/mL)': 1000, 'LA (X)': 100}
-    doe_to_idot_main('21Mar23_doe_conditions_one_plate.csv', 200, starting_conc_dict, '21Mar23_for_idot_by_rows.csv', replicates = 1, orientation ='by_rows')
+    starting_conc_dict = {'NaCl':100, 'FGF2':100, 'L-asc':100}
+    in_df = pd.read_csv('280cond-9-10-plates.csv')
+    out_file = open("280cond-9-10-plates-idot.csv", "w+", newline='')
+    doe_to_idot_main(in_df, 100, starting_conc_dict, out_file, replicates = 1, orientation ='by_rows')
+    out_file.close()
